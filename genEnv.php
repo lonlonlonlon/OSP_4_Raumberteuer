@@ -1,7 +1,7 @@
 <?php
 $envFileContent = file_get_contents('envtemplate');
 
-$tmpString = shell_exec('docker inspect osp_4_raumberteuer-database-1 | grep IPAddress');
+$tmpString = shell_exec('docker inspect osp_4_raumberteuer_database_1 | grep IPAddress');
 $tmpString = preg_replace(["/\r\n/", "/\r/"], "\n", $tmpString);
 $lines = explode("\n", $tmpString);
 $replace = "";

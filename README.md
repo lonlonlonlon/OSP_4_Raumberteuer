@@ -4,7 +4,7 @@
 #### - php-8.1 (Iconv, mbstring, PCRE, Ctype, Session, SimpleXML, Tokenizer)
 #### - composer
 #### - docker, docker-compose
-#### - pkill
+#### - pkill, sendmail
 
 ## Start Project:
 ### - (sudo chmod 755 ./startProject.sh)
