@@ -57,6 +57,7 @@ class UserController extends AbstractController
     #[Route('/api/v1/login', name: 'login_user', methods: ['POST'])]
     public function loginUser(Request $request, UserRepository $userRepository, UserPasswordHasherInterface $passwordHasher)
     {
+        file_put_contents('tmp.log', get_class($passwordHasher));
         try {
             $json = json_decode($request->getContent(), true);
             $user = $userRepository->findOneBy(['email' => $json['email']]);

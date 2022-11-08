@@ -3,14 +3,20 @@
 namespace App\DataFixtures;
 
 use App\Entity\ErrorReport;
-use App\Entity\Role;
 use App\Entity\Room;
 use App\Entity\User;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 class AppFixtures extends Fixture
 {
+    public function __construct(
+        private UserPasswordHasherInterface $passwordHasher
+    )
+    {
+    }
+
     public function load(ObjectManager $manager): void
     {
         // $product = new Product();
@@ -58,9 +64,9 @@ class AppFixtures extends Fixture
             $user
                 ->setFirstname($firstname)
                 ->setLastname($lastname)
-                ->setPasswordHash(sha1('test'.'secret'))
                 ->setRole($role)
                 ->setEmail($mail)
+                ->setPassword($this->passwordHasher->hashPassword($user, 'test'))
             ;
             $manager->persist($user);
             if ($role == 2) {
