@@ -1,0 +1,108 @@
+loginUser(email: string, password: string)
+  {
+  /////////////////////////  return this.http.post<LoginResult>(`${this.APIURL}/login`, {email, password});
+  }
+  getUsers()
+  {
+  /////////////////////////  return this.http.get<User[]>(`${this.APIURL}/users`, { headers: this.getHeaders() });
+  }
+  getUser(id: number)
+  {
+  /////////////////////////  return this.http.get<User>(`${this.APIURL}/user/${id}`, { headers: this.getHeaders() });
+  }
+  putUser(user: User)
+  {
+  /////////////////////////  return this.http.put<APIResult>(`${this.APIURL}/user/${user.id}`, user, { headers: this.getHeaders() });
+  }
+  changePassword(oldPassword: string, newPassword: string)
+  {
+  /////////////////////////  return this.http.put<APIResult>(`${this.APIURL}/user/password`, { oldPassword, newPassword }, { headers: this.getHeaders() });
+  }
+  getReports()
+  {
+  /////////////////////////  return this.http.get<Report[]>(`${this.APIURL}/reports`, { headers: this.getHeaders() });
+  }
+  getReportsForRoom(roomId: string)
+  {
+    return this.http.get<Report[]>(`${this.APIURL}/reports/room/${roomId}`, { headers: this.getHeaders() });
+  }
+  getReport()
+  {
+    return this.http.get<Report>(`${this.APIURL}/report`, { headers: this.getHeaders() });
+  }
+  postReport(report: Report)
+  {
+    return this.http.post<APIResult>(`${this.APIURL}/report`, report, { headers: this.getHeaders() });
+  }
+  putReport(report: Report)
+  {
+    return this.http.put<APIResult>(`${this.APIURL}/report`, report, { headers: this.getHeaders() });
+  }
+
+  ______________________-- to add:
+  -
+
+
+  export interface RoomPosition {
+      x: number;
+      y: number;
+  }
+
+  export enum RoomType {
+      "pc_circle",
+      "pc_sixtable",
+      "omnibus",
+      "u_big",
+      "u_small"
+  }
+
+  export class Report {
+      id: number;
+      room: string;
+      category: string;
+      roomType: RoomType;
+      position: RoomPosition;
+      description: string;
+      device: string;
+
+      status?: string = "Offen";
+      dateTime?: string;
+      reportedBy?: number;
+
+      constructor(data?: { id?: number; room?: string; category?: string; roomType?: RoomType; position?: RoomPosition; description?: string; device?: string}) {
+
+          this.id = data?.id ?? -1;
+          this.room = data?.room ?? "";
+          this.category = data?.category ?? "";
+          this.roomType = data?.roomType ?? RoomType.omnibus;
+          this.position = data?.position ?? { x: 0, y: 0};
+          this.description = data?.description ?? "";
+          this.device = data?.device ?? "";
+      }
+  }
+
+
+  export enum Role {
+      "admin",
+      "lehrer",
+      "betreuer",
+      "werkstatt"
+  }
+
+  export class User {
+      id: number = 0;
+      role: Role;
+      firstName: string;
+      lastName: string;
+      email: string;
+      avatar: string = "/assets/logo.png";
+
+      constructor(data?: {id?: number, role?: Role, firstName?: string, lastName?: string, email?: string})
+      {
+          this.id = data?.id ?? -1;
+          this.role = data?.role ?? Role.lehrer;
+          this.firstName = data?.firstName ?? "";
+          this.lastName = data?.lastName ?? "";
+          this.email = data?.email ?? "";
+      }
+  }

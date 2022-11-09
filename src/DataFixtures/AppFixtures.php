@@ -54,6 +54,14 @@ class AppFixtures extends Fixture
             'werkstatt' => 3
             ];
 
+        $roomTypes = [
+            0 => "pc_circle",
+            1 => "pc_sixtable",
+            2 => "omnibus",
+            3 => "u_big",
+            4 => "u_small"
+        ];
+
         $roleData = [2,2,2,1,1,1,3,3,0,0];
         $betreuer = [];
         foreach ($firstnames as $index => $firstname) {
@@ -81,6 +89,7 @@ class AppFixtures extends Fixture
             $room
                 ->setRoomNumber($i)
                 ->setTract('C')
+                ->setRoomType(random_int(0, 4))
                 ->setSupervisor($betreuer[random_int(0, count($betreuer)-1)]);
             $manager->persist($room);
             $rooms[] = $room;
@@ -97,7 +106,7 @@ class AppFixtures extends Fixture
                 ->setReportedBy($betreuer[random_int(0, count($betreuer)-1)])
                 ->setReportedRoom($rooms[random_int(0, count($rooms)-1)])
                 ->setSerialNumber('AAA-BB-5678-1234')
-                ->setState('offen')
+                ->setState(random_int(0,1) ? 'offen': 'geschlossen')
             ;
             $manager->persist($error);
         }

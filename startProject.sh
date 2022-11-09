@@ -11,6 +11,7 @@ fi
 pkill -e -f 'sudo php -S localhost:80 ./public/index.php'
 
 USERNAME="$(php ./getUsername.php)"
+USERNAME="software"
 
 # stop db
 sudo -u $USERNAME docker-compose down
