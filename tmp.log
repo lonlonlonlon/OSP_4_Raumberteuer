@@ -1,1 +1,2 @@
-Symfony\Component\PasswordHasher\Hasher\UserPasswordHasher
+tractString: C019  tract: C  number: 19 roomId: 120 countReports: 1
+[{"category":"hardware","id":101,"room":"C019","dateTime":{"date":"2022-11-09 18:49:49.000000","timezone_type":3,"timezone":"UTC"},"description":"Anschalter funktioniert nicht","reportedBy":52,"reportedRoom":120,"roomType":4,"position":{"x":"0.21312","y":"0.7345453"}}]

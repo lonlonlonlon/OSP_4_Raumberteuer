@@ -31,15 +31,15 @@ loginUser(email: string, password: string)
   }
   getReportsForRoom(roomId: string)
   {
-    return this.http.get<Report[]>(`${this.APIURL}/reports/room/${roomId}`, { headers: this.getHeaders() });
+  /////////////////////////  return this.http.get<Report[]>(`${this.APIURL}/reports/room/${roomId}`, { headers: this.getHeaders() });
   }
   getReport()
   {
-    return this.http.get<Report>(`${this.APIURL}/report`, { headers: this.getHeaders() });
+    return this.http.get<Report>(`${this.APIURL}/report`, { headers: this.getHeaders() });      // ???????????????
   }
   postReport(report: Report)
   {
-    return this.http.post<APIResult>(`${this.APIURL}/report`, report, { headers: this.getHeaders() });
+  /////////////////////////  return this.http.post<APIResult>(`${this.APIURL}/report`, report, { headers: this.getHeaders() });
   }
   putReport(report: Report)
   {

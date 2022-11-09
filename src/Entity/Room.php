@@ -64,9 +64,13 @@ class Room
         return $this;
     }
 
-    public function getRoomNumber(): ?int
+    public function getRoomNumber(): ?string
     {
-        return $this->roomNumber;
+        $num = $this->roomNumber;
+        while (strlen($num) != 3) {
+            $num = '0'.$num;
+        }
+        return $num;
     }
 
     public function setRoomNumber(int $roomNumber): self

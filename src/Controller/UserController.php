@@ -92,27 +92,33 @@ class UserController extends AbstractController
         try {
             $userObj = $userRepository->findOneBy(['id' => $userPutId]);
             $putJson = json_decode($request->getContent(), true);
-            $rooms = $putJson['rooms'];
-            $role = $putJson['role'];
+            try {
+                $rooms = $putJson['rooms'];
+            } catch (\Exception $e) {}
+            try {
+                $role = $putJson['role'];
+            } catch (\Exception $e) {}
             if (!empty($role)) {
                 $userObj->setRole($role);
                 $entityManager->persist($userObj);
                 $entityManager->flush();
             }
-            foreach ($rooms as $tractString){
-                $tract = str_split($tractString)[0];
-                $number = (int)substr($tractString, 1);
-                $room = $roomRepository->findOneBy(['tract' => $tract, 'roomNumber' => $number]);
-                $room->setSupervisor($userObj);
-                $entityManager->persist($room);
+            if (!empty($rooms)){
+                foreach ($rooms as $tractString) {
+                    $tract = str_split($tractString)[0];
+                    $number = (int)substr($tractString, 1);
+                    $room = $roomRepository->findOneBy(['tract' => $tract, 'roomNumber' => $number]);
+                    $room->setSupervisor($userObj);
+                    $entityManager->persist($room);
+                }
+                $entityManager->flush();
             }
-            $entityManager->flush();
 
         } catch (\Exception $exception) {
             return new JsonResponse(['error' => $exception->getMessage()], 400);
         }
 
-        return new JsonResponse([], 200);
+        return new JsonResponse([], 204);
     }
 
     #[Route('/api/v1/user/{userId}', name: 'get_user', methods: ['GET'])]
