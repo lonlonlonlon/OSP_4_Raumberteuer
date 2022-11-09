@@ -1,3 +1,10 @@
+WICHTIG:
+LeTsGoFrEuNd3
+raumbetreuer.tool@gmail.com
+Linux
+wsrfzpdgygylquen
+WICHTIG ENDE
+
 loginUser(email: string, password: string)
   {
   /////////////////////////  return this.http.post<LoginResult>(`${this.APIURL}/login`, {email, password});
