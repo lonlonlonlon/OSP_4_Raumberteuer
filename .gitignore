@@ -2,3 +2,4 @@
 /var/
 /.idea/
 .env
+/src/Controller/TestController.php
