@@ -6,6 +6,8 @@ use App\Entity\ErrorReport;
 use App\Repository\ErrorReportRepository;
 use App\Repository\RoomRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use PHPUnit\Exception;
+use PHPUnit\Util\Json;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -188,5 +190,57 @@ class ErrorReportController extends AbstractController
             return new JsonResponse(['error' => $exception->getMessage()], 400);
         }
         return new JsonResponse([], 204);
+    }
+
+    public function putReport(Request $request, EntityManagerInterface $entityManager, UserRepository $userRepository, RoomRepository $roomRepository, ErrorReportRepository $errorReportRepository)
+    {
+        $userId = $request->headers->get(EnumClass::$USER_HEADER);
+        if (empty($userId)) {
+            return new JsonResponse(['error' => 'Sie sind nicht als gültiger Benutzer angemeldet'], 401);
+        }
+        $user = $userRepository->findOneBy(['id' => $userId]);
+        if (empty($user)) {
+            return new JsonResponse(['error' => 'Sie sind nicht als gültiger Benutzer angemeldet'], 401);
+        }
+
+        try {
+            $json = json_decode($request->getContent(), true);
+            $id = $json['id'];
+            $report = $errorReportRepository->findOneBy(['id' => $id]);
+            if (empty($report)) {
+                return new JsonResponse(['error' => 'Ein Fehlerbericht mit der Id '.$id.' existiert nicht.'], 404);
+            }
+            $reportedBy = $userRepository->findOneBy(['id' => (int)$json['reportedBy']]);
+            $reportedRoom = $roomRepository->findOneBy(['id' => (int)$json['reportedRoom']]);
+            try {
+                $coord = $json['position']['x'] . ';' . $json['position']['y'];
+            } catch (\Exception $e) {$coord='';}
+            try {
+                $serialNum = $json['serialNumber'];
+            } catch (\Exception $e) {$serialNum='';}
+            try {
+                $description = $json['description'];
+            } catch (\Exception $e) {$description='';}
+            try {
+                $category = $json['category'];
+            } catch (\Exception $e) {$category='';}
+            try {
+                $state = $json['status'];
+            } catch (\Exception $e) {$state='';}
+            $report
+                ->setState($state)
+                ->setCategory($category)
+                ->setCoordinates($coord)
+                ->setMessage($description)
+                ->setReportedBy($reportedBy)
+                ->setReportedRoom($reportedRoom)
+                ->setSerialNumber($serialNum);
+
+            $entityManager->persist($report);
+            $entityManager->flush();
+            return new JsonResponse([], 204);
+        } catch (Exception $exception) {
+            return new JsonResponse(['error' => $exception->getMessage()], 400);
+        }
     }
 }
