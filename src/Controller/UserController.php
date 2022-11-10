@@ -4,10 +4,12 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\EnumClass;
+use App\Manager\EmailManager;
 use App\Repository\RoomRepository;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
+use PHPUnit\Util\Json;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -35,9 +37,9 @@ class UserController extends AbstractController
             $user = new User();
             $user
                 ->setEmail($json['email'])
-                ->setRole($json['role'])
-                ->setLastname($json['lastName'])
-                ->setFirstname($json['firstName'])
+                ->setRole(4)
+                ->setLastname($json['lastName'] ? $json['lastName'] : '')
+                ->setFirstname($json['firstName'] ? $json['firstName'] : '')
                 ->setPassword($passwordHasher->hashPassword($user, $json['password']))
                 ;
             $entityManager->persist($user);
@@ -204,4 +206,32 @@ class UserController extends AbstractController
         $toSend.=']';
         return new Response($toSend, 200, ['content-type' => 'application/json']);
     }
+
+    #[Route('/api/v1/user/reset_pw', name: 'pw_reset', methods: ['POST'])]
+    public function resetPassword(Request $request, UserRepository $userRepository, EntityManagerInterface $entityManager, UserPasswordHasherInterface $userPasswordHasher)
+    {
+        try {
+            $json = json_decode($request->getContent(), true);
+            $email = $json['email'];
+            $user = $userRepository->findOneBy(['email' => $email]);
+            if (empty($user)) {
+                return new JsonResponse(['error' => 'Es existiert kein Benutzer mit dieser Email Adresse.'], 404);
+            }
+            $newPw = generateRandomString(30);
+            $user->setPassword($userPasswordHasher->hashPassword($user, $newPw));
+            $entityManager->persist($user);
+            $entityManager->flush();
+
+            // mail mit neuem pw
+            $mailManager = new EmailManager();
+            $mailManager->sendMail($email, 'Ihr neues Passwort', "Hallo " . $user->getFirstname() . " " . $user->getLastname() . ",\n\nIhr Passwort wurde auf:\n$newPw\nzurückgesetzt. Sie können sich nun anmelden um ein eigenes Passwort zu vergeben.\n\n");
+        } catch (\Exception $exception) {
+            return new JsonResponse(["error" => $exception->getMessage()], 400);
+        }
+        return new JsonResponse([], 204);
+    }
+}
+
+function generateRandomString($length = 10) {
+    return substr(str_shuffle(str_repeat($x='0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!@%?!?!?!?!?!?@@@@@@@@', ceil($length/strlen($x)) )),1,$length);
 }

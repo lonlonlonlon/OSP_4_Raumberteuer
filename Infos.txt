@@ -35,7 +35,7 @@ loginUser(email: string, password: string)
   }
   getReport()
   {
-    return this.http.get<Report>(`${this.APIURL}/report`, { headers: this.getHeaders() });      // ???????????????
+  /////////////////////////  return this.http.get<Report>(`${this.APIURL}/report`, { headers: this.getHeaders() });
   }
   postReport(report: Report)
   {
@@ -93,7 +93,8 @@ loginUser(email: string, password: string)
       "admin",
       "lehrer",
       "betreuer",
-      "werkstatt"
+      "werkstatt",
+      "user"
   }
 
   export class User {

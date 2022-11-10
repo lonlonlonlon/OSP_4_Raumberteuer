@@ -176,7 +176,7 @@ class ErrorReportController extends AbstractController
                 ->setState($json['status'])
                 ->setCategory($json['category'])
                 ->setCoordinates($coord)
-                ->setDateTime(new \DateTime($json['dateTime']))
+                ->setDateTime(new \DateTime('now'))
                 ->setMessage($json['description'])
                 ->setReportedBy($reportedBy)
                 ->setReportedRoom($reportedRoom)
