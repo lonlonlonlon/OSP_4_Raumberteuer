@@ -34,4 +34,4 @@ sudo -u $USERNAME php bin/console cache:clear
 sudo -u $USERNAME php bin/console cache:warmup
 
 # run php build in webserver as demo webserver
-php -S localhost:80 ./public/index.php
+php -S localhost:8080 ./public/index.php

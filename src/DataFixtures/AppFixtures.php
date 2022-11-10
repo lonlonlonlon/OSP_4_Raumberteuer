@@ -89,7 +89,6 @@ class AppFixtures extends Fixture
             $room
                 ->setRoomNumber($i)
                 ->setTract('C')
-                ->setRoomType(random_int(0, 4))
                 ->setSupervisor($betreuer[random_int(0, count($betreuer)-1)]);
             $manager->persist($room);
             $rooms[] = $room;
@@ -100,8 +99,9 @@ class AppFixtures extends Fixture
             $error = new ErrorReport();
             $error
                 ->setCategory('hardware')
-                ->setCoordinates('0.21312;0.7345453')
+                ->setCoordinates(random_int(0,500).';'.random_int(0,500))
                 ->setDateTime(new \DateTime('now'))
+                ->setRoomType(random_int(0, 4))
                 ->setMessage('Anschalter funktioniert nicht')
                 ->setReportedBy($betreuer[random_int(0, count($betreuer)-1)])
                 ->setReportedRoom($rooms[random_int(0, count($rooms)-1)])

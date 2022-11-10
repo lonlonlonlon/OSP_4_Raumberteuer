@@ -27,9 +27,6 @@ class Room
     #[ORM\OneToMany(mappedBy: 'reportedRoom', targetEntity: ErrorReport::class)]
     private Collection $errorReports;
 
-    #[ORM\Column]
-    private ?int $roomType = null;
-
     public function __construct()
     {
         $this->errorReports = new ArrayCollection();
@@ -106,18 +103,6 @@ class Room
                 $errorReport->setReportedRoom(null);
             }
         }
-
-        return $this;
-    }
-
-    public function getRoomType(): ?int
-    {
-        return $this->roomType;
-    }
-
-    public function setRoomType(int $roomType): self
-    {
-        $this->roomType = $roomType;
 
         return $this;
     }

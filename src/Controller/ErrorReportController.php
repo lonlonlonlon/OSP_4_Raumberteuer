@@ -35,6 +35,7 @@ class ErrorReportController extends AbstractController
             case (EnumClass::$ADMIN_ROLE):
                 $reports = $errorReportRepository->findAll();
                 break;
+            case (EnumClass::$SIMPLE_USER):
             case (EnumClass::$LEHRER_ROLE):
                 $reports = [];
                 break;
@@ -51,6 +52,14 @@ class ErrorReportController extends AbstractController
                 break;
         }
 
+        // reports mit status abgeschlossen nicht mit raus geben
+        foreach ($reports as $index => $report) {
+            if ($report->getState() == EnumClass::$STATE_CLOSED) {
+                unset($reports[$index]);
+            }
+        }
+        rsort($reports);
+
         $json = [];
         foreach ($reports as $report) {
             $json[$report->getId()]['category'] = $report->getCategory();
@@ -60,11 +69,10 @@ class ErrorReportController extends AbstractController
             $json[$report->getId()]['description'] = $report->getMessage();
             $json[$report->getId()]['status'] = $report->getState();
             $json[$report->getId()]['reportedBy'] = $report->getReportedBy()->getId();
-            $json[$report->getId()]['reportedRoom'] = $report->getReportedRoom()->getId();
-            $json[$report->getId()]['roomType'] = $report->getReportedRoom()->getRoomType();
+            $json[$report->getId()]['roomType'] = $report->getRoomType();
             $json[$report->getId()]['position'] = (object)[
-                'x' => explode(';', $report->getCoordinates())[0],
-                'y' => explode(';', $report->getCoordinates())[1]
+                'x' => (int)explode(';', $report->getCoordinates())[0],
+                'y' => (int)explode(';', $report->getCoordinates())[1]
             ];
         }
         $toSend = '[';
@@ -73,6 +81,9 @@ class ErrorReportController extends AbstractController
         }
         $toSend = substr($toSend, 0, -1);
         $toSend.=']';
+        if (empty($reports)) {
+            $toSend = '[]';
+        }
         return new Response($toSend, 200, ['content-type' => 'application/json']);
     }
 
@@ -96,6 +107,14 @@ class ErrorReportController extends AbstractController
 
         $reports = $errorReportRepository->findBy(['reportedRoom' => $room]);
 
+        // reports mit status abgeschlossen nicht mit raus geben
+        foreach ($reports as $index => $report) {
+            if ($report->getState() == EnumClass::$STATE_CLOSED) {
+                unset($reports[$index]);
+            }
+        }
+        rsort($reports);
+
         $json = [];
         foreach ($reports as $report) {
             $json[$report->getId()]['category'] = $report->getCategory();
@@ -103,12 +122,12 @@ class ErrorReportController extends AbstractController
             $json[$report->getId()]['room'] = $report->getReportedRoom()->getTract().$report->getReportedRoom()->getRoomNumber();
             $json[$report->getId()]['dateTime'] = $report->getDateTime();
             $json[$report->getId()]['description'] = $report->getMessage();
+            $json[$report->getId()]['status'] = $report->getState();
             $json[$report->getId()]['reportedBy'] = $report->getReportedBy()->getId();
-            $json[$report->getId()]['reportedRoom'] = $report->getReportedRoom()->getId();
-            $json[$report->getId()]['roomType'] = $report->getReportedRoom()->getRoomType();
+            $json[$report->getId()]['roomType'] = $report->getRoomType();
             $json[$report->getId()]['position'] = (object)[
-                'x' => explode(';', $report->getCoordinates())[0],
-                'y' => explode(';', $report->getCoordinates())[1]
+                'x' => (int)explode(';', $report->getCoordinates())[0],
+                'y' => (int)explode(';', $report->getCoordinates())[1]
             ];
         }
 
@@ -117,6 +136,9 @@ class ErrorReportController extends AbstractController
             $toSend.=json_encode($obj).',';
         }
         $toSend = substr($toSend, 0, -1).']';
+        if (empty($reports)) {
+            $toSend = '[]';
+        }
         return new Response($toSend, 200, ['content-type' => 'application/json']);
     }
 
@@ -136,16 +158,16 @@ class ErrorReportController extends AbstractController
 
         $json = [];
         $json['category'] = $report->getCategory();
+        $json['status'] = $report->getState();
         $json['id'] = $report->getId();
         $json['room'] = $report->getReportedRoom()->getTract().$report->getReportedRoom()->getRoomNumber();
         $json['dateTime'] = $report->getDateTime();
         $json['description'] = $report->getMessage();
         $json['reportedBy'] = $report->getReportedBy()->getId();
-        $json['reportedRoom'] = $report->getReportedRoom()->getId();
-        $json['roomType'] = $report->getReportedRoom()->getRoomType();
+        $json['roomType'] = $report->getRoomType();
         $json['position'] = (object)[
-            'x' => explode(';', $report->getCoordinates())[0],
-            'y' => explode(';', $report->getCoordinates())[1]
+            'x' => (int)explode(';', $report->getCoordinates())[0],
+            'y' => (int)explode(';', $report->getCoordinates())[1]
         ];
         return new JsonResponse($json, 200);
     }
@@ -166,8 +188,11 @@ class ErrorReportController extends AbstractController
             $json = json_decode($request->getContent(), true);
 
             $report = new ErrorReport();
-            $reportedBy = $userRepository->findOneBy(['id' => (int)$json['reportedBy']]);
-            $reportedRoom = $roomRepository->findOneBy(['id' => (int)$json['reportedRoom']]);
+            $reportedBy = $userRepository->findOneBy(['id' => $userId]);
+            $tract = str_split($json['room'])[0];
+            $number = (int) substr($json['room'], 1)+1-1;
+
+            $reportedRoom = $roomRepository->findOneBy(['tract' => $tract, 'roomNumber' => $number]);
             try {
                 $coord = $json['position']['x'] . ';' . $json['position']['y'];
             } catch (\Exception $e) {$coord='';}
@@ -178,6 +203,7 @@ class ErrorReportController extends AbstractController
                 ->setState($json['status'])
                 ->setCategory($json['category'])
                 ->setCoordinates($coord)
+                ->setRoomType($json['roomType'])
                 ->setDateTime(new \DateTime('now'))
                 ->setMessage($json['description'])
                 ->setReportedBy($reportedBy)
@@ -192,6 +218,7 @@ class ErrorReportController extends AbstractController
         return new JsonResponse([], 204);
     }
 
+    #[Route('/api/v1/report', name: 'put_report', methods: ['PUT'])]
     public function putReport(Request $request, EntityManagerInterface $entityManager, UserRepository $userRepository, RoomRepository $roomRepository, ErrorReportRepository $errorReportRepository)
     {
         $userId = $request->headers->get(EnumClass::$USER_HEADER);
@@ -210,8 +237,11 @@ class ErrorReportController extends AbstractController
             if (empty($report)) {
                 return new JsonResponse(['error' => 'Ein Fehlerbericht mit der Id '.$id.' existiert nicht.'], 404);
             }
-            $reportedBy = $userRepository->findOneBy(['id' => (int)$json['reportedBy']]);
-            $reportedRoom = $roomRepository->findOneBy(['id' => (int)$json['reportedRoom']]);
+            $reportedBy = $user;
+            $tract = str_split($json['room'])[0];
+            $number = (int) substr($json['room'], 1)+1-1;
+
+            $reportedRoom = $roomRepository->findOneBy(['tract' => $tract, 'roomNumber' => $number]);
             try {
                 $coord = $json['position']['x'] . ';' . $json['position']['y'];
             } catch (\Exception $e) {$coord='';}
@@ -242,5 +272,58 @@ class ErrorReportController extends AbstractController
         } catch (Exception $exception) {
             return new JsonResponse(['error' => $exception->getMessage()], 400);
         }
+    }
+
+    #[Route('/api/v1/history', name: 'record_history', methods: ['GET'])]
+    public function getHistoricalReports(Request $request, EntityManagerInterface $entityManager, UserRepository $userRepository, RoomRepository $roomRepository, ErrorReportRepository $errorReportRepository)
+    {
+        $userId = $request->headers->get(EnumClass::$USER_HEADER);
+        if (empty($userId)) {
+            return new JsonResponse(['error' => 'Sie sind nicht als gültiger Benutzer angemeldet'], 401);
+        }
+        $user = $userRepository->findOneBy(['id' => $userId]);
+        if (empty($user)) {
+            return new JsonResponse(['error' => 'Sie sind nicht als gültiger Benutzer angemeldet'], 401);
+        }
+
+        if ($user->getRole() != EnumClass::$ADMIN_ROLE) {
+            return new JsonResponse(['error' => 'Sie verfügen nicht über die nötigen Berechtigungen.'], 403);
+        }
+
+        $reports = $errorReportRepository->findAll();
+
+        // reports mit status abgeschlossen nicht mit raus geben
+        foreach ($reports as $index => $report) {
+            if ($report->getState() == EnumClass::$STATE_CLOSED) {
+                unset($reports[$index]);
+            }
+        }
+        rsort($reports);
+
+        $json = [];
+        foreach ($reports as $report) {
+            $json[$report->getId()]['category'] = $report->getCategory();
+            $json[$report->getId()]['id'] = $report->getId();
+            $json[$report->getId()]['room'] = $report->getReportedRoom()->getTract().$report->getReportedRoom()->getRoomNumber();
+            $json[$report->getId()]['dateTime'] = $report->getDateTime();
+            $json[$report->getId()]['description'] = $report->getMessage();
+            $json[$report->getId()]['status'] = $report->getState();
+            $json[$report->getId()]['reportedBy'] = $report->getReportedBy()->getId();
+            $json[$report->getId()]['roomType'] = $report->getRoomType();
+            $json[$report->getId()]['position'] = (object)[
+                'x' => (int)explode(';', $report->getCoordinates())[0],
+                'y' => (int)explode(';', $report->getCoordinates())[1]
+            ];
+        }
+
+        $toSend = '[';
+        foreach ($json as $id => $obj) {
+            $toSend.=json_encode($obj).',';
+        }
+        $toSend = substr($toSend, 0, -1).']';
+        if (empty($reports)) {
+            $toSend = '[]';
+        }
+        return new Response($toSend, 200, ['content-type' => 'application/json']);
     }
 }

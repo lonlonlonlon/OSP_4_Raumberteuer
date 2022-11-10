@@ -9,4 +9,10 @@ class EnumClass
     public static int $LEHRER_ROLE = 1;
     public static int $BETREUER_ROLE = 2;
     public static int $WERKSTATT_ROLE = 3;
+    public static int $SIMPLE_USER = 4;
+
+    public static string $STATE_OPEN ='offen';
+    public static string $STATE_VERIFIED ='verifiziert';
+    public static string $STATE_WIP ='in bearbeitung';
+    public static string $STATE_CLOSED ='geschlossen';
 }

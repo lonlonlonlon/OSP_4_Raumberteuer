@@ -75,10 +75,10 @@ class UserController extends AbstractController
     }
 
     #[Route('/api/v1/user/{userPutId}', name: 'put_user', methods: ['PUT'])]
-    public function putUser(Request $request, $userPutId, UserRepository $userRepository, EntityManagerInterface $entityManager, RoomRepository $roomRepository): Response
+    public function putUser(Request $request, $userPutId, UserRepository $userRepository, EntityManagerInterface $entityManager, RoomRepository $roomRepository, UserPasswordHasherInterface $userPasswordHasher): Response
     {
-        // TODO: nochmal kontrollieren ob "role" und "rooms" wirklich im json sind
         $userId = $request->headers->get(EnumClass::$USER_HEADER);
+        $userId == $userPutId ? $isSelf=true : $isSelf = false;
         if (empty($userId)) {
             return new JsonResponse(['error' => 'Sie sind nicht als gültiger Benutzer angemeldet'], 401);
         }
@@ -87,7 +87,7 @@ class UserController extends AbstractController
             return new JsonResponse(['error' => 'Sie sind nicht als gültiger Benutzer angemeldet'], 401);
         }
 
-        if ($user->getRole() != EnumClass::$ADMIN_ROLE) {
+        if ($user->getRole() != EnumClass::$ADMIN_ROLE && !$isSelf) {
             return new JsonResponse(['error' => 'Sie verfügen nicht über die nötigen Berechtigungen.'], 403);
         }
 
@@ -116,6 +116,18 @@ class UserController extends AbstractController
                 $entityManager->flush();
             }
 
+            file_put_contents('tmp3.log', $request->getContent().PHP_EOL);
+            $inJson = json_decode($request->getContent(), true);
+            if (!empty($inJson['passwordOld']) && !empty($inJson['passwordNew'])) {
+                $oldPwValid = $userPasswordHasher->isPasswordValid($user, $inJson['passwordOld']);
+                if (!$oldPwValid) {
+                    return new JsonResponse(['error' => 'Das alte Passwort ist nicht korrekt.'], 401);
+                }
+                $user->setPassword($userPasswordHasher->hashPassword($user, $inJson['passwordNew']));
+                $entityManager->persist($user);
+                $entityManager->flush();
+            }
+
         } catch (\Exception $exception) {
             return new JsonResponse(['error' => $exception->getMessage()], 400);
         }
@@ -124,7 +136,7 @@ class UserController extends AbstractController
     }
 
     #[Route('/api/v1/user/{userId}', name: 'get_user', methods: ['GET'])]
-    public function retrieveUser(Request $request, $userId, UserRepository $userRepository): Response
+    public function retrieveUser(Request $request, $userId, UserRepository $userRepository, RoomRepository $roomRepository): Response
     {
         $userIdHeader = $request->headers->get(EnumClass::$USER_HEADER);
         $userIdHeader == $userId ? $isself = true:$isself=false;
@@ -140,7 +152,19 @@ class UserController extends AbstractController
             return new JsonResponse(['error' => 'Sie verfügen nicht über die nötigen Berechtigungen.'], 403);
         }
         unset($user);
+
         $user = $userRepository->findOneBy(['id' => (int)$userId]);
+
+        $rooms = [];
+        if ($user->getRole() == EnumClass::$BETREUER_ROLE) {
+            $rooms = $roomRepository->findBy(['Supervisor' => $user]);
+            file_put_contents('tmp2.log', (!empty($rooms)) ? 'rooms isda' : 'rooms empty');
+        }
+        $roomNames = [];
+        foreach ($rooms as $room) {
+            $roomNames[] = $room->getTract().$room->getRoomNumber();
+        }
+
         if ($user) {
             $json = [];
             $json['id'] = $user->getId();
@@ -148,6 +172,7 @@ class UserController extends AbstractController
             $json['role'] = $user->getRole();
             $json['lastName'] = $user->getLastname();
             $json['firstName'] = $user->getFirstname();
+            $json['rooms'] = $roomNames;
             return new JsonResponse($json, 200);
         }
         return new Response('No user with id '.$userId, 404);
@@ -161,14 +186,18 @@ class UserController extends AbstractController
             $user = $userRepository->findOneBy(['email' => $json['email']]);
             if ($user) {
                 if ($passwordHasher->isPasswordValid($user, $json['password'])){
+                    file_put_contents('login.log', "Login for user ".$user->getEmail()." succeded.\n");
                     return new JsonResponse(['id' => $user->getId()], 200);
                 } else {
+                    file_put_contents('login.log', "Login for user ".$user->getEmail()." failed wrong pw.\n");
                     return new JsonResponse(['error' => 'Das Passwort ist ungültig, bitte geben Sie es erneut ein.', 'id' => -1], 200);
                 }
             } else {
-                return new JsonResponse(['error' => 'Es existiert kein Benutzer mit der Email-Adresse '.$json['email'], 'id' => -1], 404);
+                file_put_contents('login.log', "Login for user ".$json['email']." failed, user not found.\n");
+                return new JsonResponse(['error' => 'Es existiert kein Benutzer mit der Email-Adresse '.$json['email'].'.', 'id' => -1], 404);
             }
         } catch (\Exception $exception) {
+            file_put_contents('login.log', "Exception: ".$exception->getMessage()."\n".$exception->getTraceAsString()."\n");
             return new JsonResponse(['error' => $exception->getMessage(), 'id' => -1], 400);
         }
     }
@@ -204,6 +233,9 @@ class UserController extends AbstractController
         }
         $toSend = substr($toSend, 0, -1);
         $toSend.=']';
+        if (empty($users)) {
+            $toSend = '[]';
+        }
         return new Response($toSend, 200, ['content-type' => 'application/json']);
     }
 

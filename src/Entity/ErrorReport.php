@@ -38,6 +38,9 @@ class ErrorReport
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $coordinates = null;
 
+    #[ORM\Column]
+    private ?int $roomType = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -135,6 +138,18 @@ class ErrorReport
     public function setCoordinates(?string $coordinates): self
     {
         $this->coordinates = $coordinates;
+
+        return $this;
+    }
+
+    public function getRoomType(): ?int
+    {
+        return $this->roomType;
+    }
+
+    public function setRoomType(int $roomType): self
+    {
+        $this->roomType = $roomType;
 
         return $this;
     }
