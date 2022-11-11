@@ -26,7 +26,7 @@ class UserController extends AbstractController
     #[Route('/{e}/{a}/{b}/{c}/{d}', name: 'options_wildcard4', methods: ['OPTIONS'])]
     public function options(Request $request, UserPasswordHasherInterface $passwordHasher, EntityManagerInterface $entityManager): Response
     {
-        return new Response('', 204);
+        return new Response('', 204, ['Access-Control-Allow-Origin' => 'http://localhost', 'Content-Type' => 'text/plain', 'x-frame-options' => 'SAMEORIGIN']);
     }
 
     #[Route('/api/v1/user', name: 'create_user', methods: ['POST'])]
@@ -100,8 +100,8 @@ class UserController extends AbstractController
             try {
                 $role = $putJson['role'];
             } catch (\Exception $e) {}
-            if (!empty($role)) {
-                $userObj->setRole($role);
+            if ($role) {
+                $userObj->setRole((int)$role);
                 $entityManager->persist($userObj);
                 $entityManager->flush();
             }
@@ -116,7 +116,6 @@ class UserController extends AbstractController
                 $entityManager->flush();
             }
 
-            file_put_contents('tmp3.log', $request->getContent().PHP_EOL);
             $inJson = json_decode($request->getContent(), true);
             if (!empty($inJson['passwordOld']) && !empty($inJson['passwordNew'])) {
                 $oldPwValid = $userPasswordHasher->isPasswordValid($user, $inJson['passwordOld']);
@@ -158,7 +157,6 @@ class UserController extends AbstractController
         $rooms = [];
         if ($user->getRole() == EnumClass::$BETREUER_ROLE) {
             $rooms = $roomRepository->findBy(['Supervisor' => $user]);
-            file_put_contents('tmp2.log', (!empty($rooms)) ? 'rooms isda' : 'rooms empty');
         }
         $roomNames = [];
         foreach ($rooms as $room) {
@@ -186,18 +184,14 @@ class UserController extends AbstractController
             $user = $userRepository->findOneBy(['email' => $json['email']]);
             if ($user) {
                 if ($passwordHasher->isPasswordValid($user, $json['password'])){
-                    file_put_contents('login.log', "Login for user ".$user->getEmail()." succeded.\n");
                     return new JsonResponse(['id' => $user->getId()], 200);
                 } else {
-                    file_put_contents('login.log', "Login for user ".$user->getEmail()." failed wrong pw.\n");
                     return new JsonResponse(['error' => 'Das Passwort ist ungültig, bitte geben Sie es erneut ein.', 'id' => -1], 200);
                 }
             } else {
-                file_put_contents('login.log', "Login for user ".$json['email']." failed, user not found.\n");
                 return new JsonResponse(['error' => 'Es existiert kein Benutzer mit der Email-Adresse '.$json['email'].'.', 'id' => -1], 404);
             }
         } catch (\Exception $exception) {
-            file_put_contents('login.log', "Exception: ".$exception->getMessage()."\n".$exception->getTraceAsString()."\n");
             return new JsonResponse(['error' => $exception->getMessage(), 'id' => -1], 400);
         }
     }

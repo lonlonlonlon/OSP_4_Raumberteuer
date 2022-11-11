@@ -32,6 +32,14 @@ class ErrorReportController extends AbstractController
 
         switch ($user->getRole()) {
             case (EnumClass::$WERKSTATT_ROLE):
+                $tmp = $errorReportRepository->findAll();
+                $reports = [];
+                foreach ($tmp as $index => $report) {
+                    if (trim($report->getState()) != EnumClass::$STATE_OPEN) {
+                        $reports[]=$report;
+                    }
+                }
+                break;
             case (EnumClass::$ADMIN_ROLE):
                 $reports = $errorReportRepository->findAll();
                 break;
@@ -286,16 +294,16 @@ class ErrorReportController extends AbstractController
             return new JsonResponse(['error' => 'Sie sind nicht als gültiger Benutzer angemeldet'], 401);
         }
 
-        if ($user->getRole() != EnumClass::$ADMIN_ROLE) {
+        if ($user->getRole() != EnumClass::$ADMIN_ROLE && $user->getRole() != EnumClass::$BETREUER_ROLE && $user->getRole() != EnumClass::$WERKSTATT_ROLE) {
             return new JsonResponse(['error' => 'Sie verfügen nicht über die nötigen Berechtigungen.'], 403);
         }
 
-        $reports = $errorReportRepository->findAll();
-
+        $tmp = $errorReportRepository->findAll();
+        $reports = [];
         // reports mit status abgeschlossen nicht mit raus geben
-        foreach ($reports as $index => $report) {
+        foreach ($tmp as $index => $report) {
             if ($report->getState() == EnumClass::$STATE_CLOSED) {
-                unset($reports[$index]);
+                $reports[] = $report;
             }
         }
         rsort($reports);
