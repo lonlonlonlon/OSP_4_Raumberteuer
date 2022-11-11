@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\ErrorReport;
+use App\Manager\EmailManager;
 use App\Repository\ErrorReportRepository;
 use App\Repository\RoomRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -220,6 +221,18 @@ class ErrorReportController extends AbstractController
 
             $entityManager->persist($report);
             $entityManager->flush();
+
+            // mail an betreuer
+            $mailManager = new EmailManager();
+            if ($reportedRoom) {
+                $betreuer = $reportedRoom->getSupervisor();
+                $roomName = $reportedRoom->getTract().$reportedRoom->getRoomNumber();
+                $mailManager->sendMail(
+                    $betreuer->getEmail(),
+                    'Neuer Defekt in '.$roomName,
+                    "Hallo ".$betreuer->getFirstname().' '.$betreuer->getLastname().",\n\nIn Ihrem Raum $roomName wurde ein neuer Fehler von ".$reportedBy->getFirstname().' '.$reportedBy->getLastname()." erfasst.\nDie Fehlerbeschreibung:\n".$report->getMessage()."\n\nFür weitere Informationen loggen Sie sich bitte in das Raumbetreuer Tool ein."
+                );
+            }
         } catch (\Exception $exception) {
             return new JsonResponse(['error' => $exception->getMessage()], 400);
         }
@@ -276,6 +289,17 @@ class ErrorReportController extends AbstractController
 
             $entityManager->persist($report);
             $entityManager->flush();
+
+            if ($report->getState() == EnumClass::$STATE_VERIFIED) {
+                $pcServiceStationUsers = $userRepository->findBy(['role' => EnumClass::$WERKSTATT_ROLE]);
+                $mailManager = new EmailManager();
+                foreach ($pcServiceStationUsers as $user){
+                    $roomName = $report->getReportedRoom()->getTract().$report->getReportedRoom()->getRoomNumber();
+                    $mailManager->sendMail($user->getEmail(),
+                        'Neuer Defekt GSO Köln '.$roomName,
+                        "Hallo ".$user->getFirstname().' '.$user->getLastname().",\n\nEs wurde ein neuer Defekt in Raum $roomName erfasst.\nDie Defektbeschreibung:\n".$report->getMessage()."\n\nBitte loggen sie sich im Raumbetreuer Tool ein um weitere Informationen zu erhalten.\n\n");
+                }
+            }
             return new JsonResponse([], 204);
         } catch (Exception $exception) {
             return new JsonResponse(['error' => $exception->getMessage()], 400);

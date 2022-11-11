@@ -12,6 +12,9 @@ class EmailManager
 
     public function sendMail($recipient, $subject, $textBody)
     {
+        $recipient = str_replace(['ä', 'ü', 'ö', 'ß'], ['ae', 'ue', 'oe', 'ss'], $recipient);
+        $subject = str_replace(['ä', 'ü', 'ö', 'ß'], ['ae', 'ue', 'oe', 'ss'], $subject);
+        $textBody = str_replace(['ä', 'ü', 'ö', 'ß'], ['ae', 'ue', 'oe', 'ss'], $textBody);
         $success = shell_exec("python python/mail.py \"$recipient\" \"$subject\" \"$textBody\"");
         if (trim($success) == 'OK') {
             // alles gut
