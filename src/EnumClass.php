@@ -15,4 +15,6 @@ class EnumClass
     public static string $STATE_VERIFIED ='verifiziert';
     public static string $STATE_WIP ='in bearbeitung';
     public static string $STATE_CLOSED ='geschlossen';
+
+    public static string $APP_SECRET = 'o8edrp98u45fk8uso3489m5dsp85zeu60dp9i4sr';
 }

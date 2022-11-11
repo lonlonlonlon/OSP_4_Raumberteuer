@@ -1,8 +1,9 @@
 <?php
 $envFileContent = file_get_contents('envtemplate');
 
-$tmpString = shell_exec('docker inspect osp_4_raumberteuer_database_1 | grep IPAddress');
+$tmpString = shell_exec('docker inspect RaumbetreuerToolDatabase | grep IPAddress');
 $tmpString = preg_replace(["/\r\n/", "/\r/"], "\n", $tmpString);
+
 $lines = explode("\n", $tmpString);
 $replace = "";
 foreach ($lines as $line) {
@@ -11,11 +12,6 @@ foreach ($lines as $line) {
         $line = trim(trim($line, ','), '"');
         $replace = $line;
     }
-}
-
-if (empty($replace)) {
-    echo("Leon ankacken, da funzt was net mit Docker und der DB");
-    exit();
 }
 
 $envFileContent = str_replace('DBIPADDR', $replace, $envFileContent);
