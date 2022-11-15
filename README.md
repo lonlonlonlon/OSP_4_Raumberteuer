@@ -11,6 +11,12 @@
 ### - (sudo chmod 755 ./startProject.sh)
 ### - sudo ./startProject.sh
 
+## First start setup:
+### - after starting the project for the first time execute the following command inside the project root folder:
+php bin/console doc:fi:loa
+### then type yes and hit enter
+### now the datafixtures providing sample data have been executed
+
 ## Solving known issues:
 ### - Backend unable to connect to Database (connection refused):
 ####     remove the # at the beginning of line 32 in envtemplate, and put a # at the beginning of line 33 in envtemplate
