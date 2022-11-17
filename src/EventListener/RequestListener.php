@@ -20,6 +20,7 @@ class RequestListener
             'access-control-allow-credentials' => 'true',
             'access-control-allow-methods' => '*',
             'Access-Control-Allow-Origin' => '*',
+            'Access-Control-Allow-Headers' => '*',
         ]);
     }
 }
